@@ -11,7 +11,7 @@
   <Project>https://github.com/B0st0wn/CloudflareDNSUpdater</Project>
   <Overview>Lightweight Cloudflare DDNS updater with web UI. Automatically detects your public IP and updates Cloudflare DNS records with optional proxy status control.</Overview>
   <Category>Networking</Category>
-  <WebUI>http://[IP]:[PORT:7575]</WebUI>
+  <WebUI>http://[IP]:[PORT:Web Port]</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/B0st0wn/CloudflareDNSUpdater/main/unraid_template.xml</TemplateURL>
   <Icon>https://www.cloudflare.com/favicon.ico</Icon>
   <ExtraParams/>
@@ -21,7 +21,7 @@
   <DonateLink/>
   <Requires/>
   <Config Name="CONFIG_SECRET" Target="CONFIG_SECRET" Default="" Mode="" Description="Optional secret key for token obfuscation (leave blank to disable)" Type="Variable" Display="always" Required="false" Mask="true"/>
-  <Config Name="Web Port" Target="7575" Default="7575" Mode="tcp" Description="Web UI port" Type="Port" Display="always" Required="true" Mask="false">7575</Config>
+  <Config Name="Web Port" Target="8080" Default="7575" Mode="tcp" Description="Web UI port" Type="Port" Display="always" Required="true" Mask="false">7575</Config>
   <Config Name="Data Path" Target="/data" Default="/mnt/user/appdata/cf-ddns/" Mode="rw" Description="Storage for configuration and records" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/cf-ddns/</Config>
   <TailscaleStateDir/>
 </Container>
