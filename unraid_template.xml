@@ -1,27 +1,27 @@
-<Container>
+<?xml version="1.0"?>
+<Container version="2">
   <Name>cloudflare-ddns</Name>
-  <Repository>cloudflarednsupdater</Repository>
+  <Repository>ghcr.io/b0st0wn/cloudflarednsupdater:latest</Repository>
   <Registry>ghcr.io/B0st0wn</Registry>
   <Network>bridge</Network>
-  <MyIP>0.0.0.0</MyIP>
-  <WebUI>http://[IP]:[PORT:7575]</WebUI>
-  <Port>
-    <HostPort>7575</HostPort>
-    <ContainerPort>8080</ContainerPort>
-    <Protocol>tcp</Protocol>
-  </Port>
-  <Volume>
-    <HostDir>/mnt/user/appdata/cf-ddns/</HostDir>
-    <ContainerDir>/data</ContainerDir>
-    <Mode>rw</Mode>
-  </Volume>
-  <Environment>
-    <Variable>
-      <Name>CONFIG_SECRET</Name>
-      <Default>changeme</Default>
-      <Mode>normal</Mode>
-    </Variable>
-  </Environment>
-  <Icon>https://example.com/icon.png</Icon>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support/>
+  <Project>https://github.com/B0st0wn/CloudflareDNSUpdater</Project>
+  <Overview>Lightweight Cloudflare DDNS updater with web UI. Automatically detects your public IP and updates Cloudflare DNS records with optional proxy status control.</Overview>
   <Category>Networking</Category>
+  <WebUI>http://[IP]:[PORT:7575]</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/B0st0wn/CloudflareDNSUpdater/main/unraid_template.xml</TemplateURL>
+  <Icon>https://www.cloudflare.com/favicon.ico</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Config Name="CONFIG_SECRET" Target="CONFIG_SECRET" Default="" Mode="" Description="Optional secret key for token obfuscation (leave blank to disable)" Type="Variable" Display="always" Required="false" Mask="true"/>
+  <Config Name="Web Port" Target="7575" Default="7575" Mode="tcp" Description="Web UI port" Type="Port" Display="always" Required="true" Mask="false">7575</Config>
+  <Config Name="Data Path" Target="/data" Default="/mnt/user/appdata/cf-ddns/" Mode="rw" Description="Storage for configuration and records" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/cf-ddns/</Config>
+  <TailscaleStateDir/>
 </Container>
