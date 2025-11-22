@@ -4,7 +4,12 @@
   <Registry>ghcr.io/B0st0wn</Registry>
   <Network>bridge</Network>
   <MyIP>0.0.0.0</MyIP>
-  <WebUI>http://[IP]:[PORT:8080]</WebUI>
+  <WebUI>http://[IP]:[PORT:7575]</WebUI>
+  <Port>
+    <HostPort>7575</HostPort>
+    <ContainerPort>8080</ContainerPort>
+    <Protocol>tcp</Protocol>
+  </Port>
   <Volume>
     <HostDir>/mnt/user/appdata/cf-ddns/</HostDir>
     <ContainerDir>/data</ContainerDir>
