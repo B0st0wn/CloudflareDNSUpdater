@@ -1,0 +1,22 @@
+<Container>
+  <Name>cf-ddns</Name>
+  <Repository>yourname/cf-ddns:latest</Repository>
+  <Registry>docker.io</Registry>
+  <Network>bridge</Network>
+  <MyIP>0.0.0.0</MyIP>
+  <WebUI>http://[IP]:[PORT:8080]</WebUI>
+  <Volume>
+    <HostDir>/mnt/user/appdata/cf-ddns/</HostDir>
+    <ContainerDir>/data</ContainerDir>
+    <Mode>rw</Mode>
+  </Volume>
+  <Environment>
+    <Variable>
+      <Name>CONFIG_SECRET</Name>
+      <Default>changeme</Default>
+      <Mode>normal</Mode>
+    </Variable>
+  </Environment>
+  <Icon>https://example.com/icon.png</Icon>
+  <Category>Networking</Category>
+</Container>

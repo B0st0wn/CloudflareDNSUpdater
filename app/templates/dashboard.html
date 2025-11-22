@@ -1,0 +1,304 @@
+{% extends "layout.html" %}
+{% block content %}
+  <section>
+    <h2>Configuration</h2>
+    {% if not token_present %}
+      <form hx-post="/api/config" method="post">
+        <label>API Token: <input type="password" name="token" required /></label>
+        <button type="submit">Save Token</button>
+      </form>
+    {% else %}
+      <p>✓ API token configured.</p>
+      <hr />
+      
+      <h3>Polling Interval</h3>
+      <div style="margin: 1em 0;">
+        <label>Update interval (seconds): 
+          <input type="number" id="polling-interval" min="60" step="60" value="300" style="width: 100px;" />
+          <button onclick="setPollingInterval()">Update</button>
+        </label>
+        <small style="display: block; margin-top: 0.5em; color: #666;">Minimum 60 seconds. Adjust to control API call frequency.</small>
+      </div>
+      <hr />
+      
+      <h3>Import Records from Cloudflare</h3>
+      <button hx-get="/api/zones" hx-target="#zones-list" hx-swap="innerHTML">Load Zones</button>
+      <div id="zones-list"></div>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2>Configured Records</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Content (IP)</th>
+          <th>Proxy</th>
+          <th>Auto-Update</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="records-body">
+      {% for r in records %}
+        <tr>
+          <td>{{ r.name }}</td>
+          <td>{{ r.type or 'A' }}</td>
+          <td>{{ r.content }}</td>
+          <td>
+            <input 
+              type="checkbox" 
+              class="proxy-checkbox"
+              data-record-id="{{ r.record_id }}"
+              disabled
+              style="cursor: not-allowed; opacity: 0.6;"
+              title="Loading proxy status..."
+            />
+          </td>
+          <td>
+            <input 
+              type="checkbox" 
+              {% if r.auto_update %}checked{% endif %}
+              onchange="updateAutoFlag('{{ r.record_id }}', this.checked)"
+            />
+          </td>
+          <td><button onclick="deleteRecord('{{ r.record_id }}')">Delete</button></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6">No records configured. Import some above.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Actions</h2>
+    <button hx-post="/api/update-now" hx-swap="none" onclick="alert('Sync triggered')">Sync Now</button>
+  </section>
+
+  <script>
+    // Load polling interval on page load
+    window.addEventListener('load', function() {
+      fetch('/api/status')
+        .then(r => r.json())
+        .then(data => {
+          if (data.polling_interval) {
+            document.getElementById('polling-interval').value = data.polling_interval;
+          }
+        })
+        .catch(e => console.error('Failed to load polling interval:', e));
+    });
+
+    function setPollingInterval() {
+      const interval = parseInt(document.getElementById('polling-interval').value);
+      if (isNaN(interval) || interval < 60) {
+        alert('Polling interval must be at least 60 seconds');
+        return;
+      }
+      fetch('/api/polling-interval?interval=' + interval, {method: 'POST'})
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(data => {
+          alert('Polling interval updated to ' + data.polling_interval + ' seconds');
+        })
+        .catch(e => {
+          alert('Failed to update polling interval: ' + e.message);
+        });
+    }
+
+    function updateAutoFlag(recordId, checked) {
+      fetch('/api/records?record_id=' + encodeURIComponent(recordId) + '&auto_update=' + checked, {method: 'PATCH'})
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .catch(e => {
+          alert('Failed to update: ' + e.message);
+          location.reload();
+        });
+    }
+
+    function deleteRecord(recordId) {
+      if (!confirm('Delete this record?')) return;
+      fetch('/api/records?id=' + encodeURIComponent(recordId), {method: 'DELETE'})
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(data => {
+          location.reload();
+        })
+        .catch(e => {
+          alert('Failed to delete: ' + e.message);
+        });
+    }
+
+    // Render zones and create record load buttons
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+      if (evt.detail.target.id === 'zones-list') {
+        try {
+          const response = JSON.parse(evt.detail.xhr.response);
+          const zones = response || [];
+          let html = '<div style="margin-top: 1em;">';
+          zones.forEach(zone => {
+            html += `
+              <div style="border: 1px solid #ccc; padding: 0.5em; margin: 0.5em 0;">
+                <strong>${zone.name}</strong> (${zone.id})
+                <button 
+                  onclick="loadRecords('${zone.id}')"
+                  style="margin-left: auto; display: block; float: right;"
+                >Load Records</button>
+                <div id="records-${zone.id}" style="clear: both; margin-top: 0.5em;"></div>
+              </div>
+            `;
+          });
+          html += '</div>';
+          document.getElementById('zones-list').innerHTML = html;
+        } catch(e) {
+          document.getElementById('zones-list').innerHTML = '<p style="color: red;">Error parsing zones: ' + e.message + '</p>';
+          console.error('Zones parse error:', e);
+        }
+      }
+    });
+
+    function loadRecords(zoneId) {
+      const target = document.getElementById('records-' + zoneId);
+      if (!target) {
+        console.error('Target not found:', 'records-' + zoneId);
+        return;
+      }
+      target.innerHTML = '<p>Loading...</p>';
+      
+      fetch('/api/zones/' + zoneId + '/records')
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(data => {
+          const records = data.records || [];
+          let html = '';
+          if (records.length === 0) {
+            html = '<p style="color: gray; font-size: 0.9em;">No A/AAAA records found.</p>';
+          } else {
+            html += '<table style="font-size: 0.85em; width: 100%; border-collapse: collapse;">';
+            html += '<tr><th style="border: 1px solid #ccc; padding: 0.3em;"><input type="checkbox" id="select-all-' + zoneId + '" onchange="selectAll(this, \'' + zoneId + '\')"></th><th style="border: 1px solid #ccc; padding: 0.3em;">Name</th><th style="border: 1px solid #ccc; padding: 0.3em;">Type</th><th style="border: 1px solid #ccc; padding: 0.3em;">IP</th></tr>';
+            records.forEach(rec => {
+              html += `<tr>
+                <td style="border: 1px solid #ccc; padding: 0.3em;"><input type="checkbox" class="record-checkbox-${zoneId}" data-record-id="${rec.id}"></td>
+                <td style="border: 1px solid #ccc; padding: 0.3em;">${rec.name}</td>
+                <td style="border: 1px solid #ccc; padding: 0.3em;">${rec.type}</td>
+                <td style="border: 1px solid #ccc; padding: 0.3em;">${rec.content}</td>
+              </tr>`;
+            });
+            html += '</table>';
+            html += '<button onclick="importSelected(\'' + zoneId + '\')" style="margin-top: 0.5em;">Import Selected</button>';
+          }
+          target.innerHTML = html;
+        })
+        .catch(e => {
+          target.innerHTML = '<p style="color: red; font-size: 0.9em;">Error: ' + e.message + '</p>';
+          console.error('Load records error:', e);
+        });
+    }
+
+    function selectAll(checkbox, zoneId) {
+      const checkboxes = document.querySelectorAll('.record-checkbox-' + zoneId);
+      checkboxes.forEach(cb => cb.checked = checkbox.checked);
+    }
+
+    function importSelected(zoneId) {
+      const checkboxes = document.querySelectorAll('.record-checkbox-' + zoneId + ':checked');
+      const recordIds = Array.from(checkboxes).map(cb => cb.dataset.recordId);
+      
+      if (recordIds.length === 0) {
+        alert('Please select at least one record to import.');
+        return;
+      }
+
+      fetch('/api/import-records', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({zone_id: zoneId, record_ids: recordIds})
+      })
+      .then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(data => {
+        alert('Imported ' + data.imported + ' record(s). Refreshing...');
+        location.reload();
+      })
+      .catch(e => {
+        alert('Import failed: ' + e.message);
+        console.error('Import error:', e);
+      });
+    }
+
+    // Sort records table by name on page load
+    window.addEventListener('load', function() {
+      sortRecordsTable();
+      loadProxyStatuses();
+    });
+
+    function sortRecordsTable() {
+      const tbody = document.getElementById('records-body');
+      if (!tbody) return;
+      
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      rows.sort((a, b) => {
+        const aName = a.cells[0]?.textContent.trim() || '';
+        const bName = b.cells[0]?.textContent.trim() || '';
+        return aName.localeCompare(bName);
+      });
+      
+      rows.forEach(row => tbody.appendChild(row));
+    }
+
+    function loadProxyStatuses() {
+      const checkboxes = document.querySelectorAll('.proxy-checkbox');
+      checkboxes.forEach(checkbox => {
+        const recordId = checkbox.dataset.recordId;
+        fetch('/api/records/' + encodeURIComponent(recordId) + '/proxy')
+          .then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+          })
+          .then(data => {
+            checkbox.checked = data.proxied;
+            checkbox.disabled = false;
+            checkbox.style.cursor = 'pointer';
+            checkbox.style.opacity = '1';
+            checkbox.title = 'Toggle proxy (orange cloud) status';
+            checkbox.onchange = function() {
+              updateProxyStatus(recordId, this.checked);
+            };
+          })
+          .catch(e => {
+            console.error('Failed to load proxy status for ' + recordId + ':', e);
+            checkbox.title = 'Failed to load proxy status: ' + e.message;
+          });
+      });
+    }
+
+    function updateProxyStatus(recordId, proxied) {
+      fetch('/api/records/' + encodeURIComponent(recordId) + '/proxy?proxied=' + proxied, {method: 'PATCH'})
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(data => {
+          console.log('Proxy status updated for ' + recordId + ': ' + proxied);
+        })
+        .catch(e => {
+          alert('Failed to update proxy status: ' + e.message);
+          loadProxyStatuses();
+        });
+    }
+  </script>
+{% endblock %}
+
+
+
