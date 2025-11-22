@@ -1,6 +1,12 @@
+
 {% extends "layout.html" %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="components/header.js"></script>
+<script src="components/footer.js"></script>
 {% block content %}
-  <section>
+<custom-header></custom-header>
+<div class="container">
+<section>
     <h2>Configuration</h2>
     {% if not token_present %}
       <form hx-post="/api/config" method="post">
@@ -298,7 +304,8 @@
         });
     }
   </script>
+</div>
+<custom-footer></custom-footer>
 {% endblock %}
 
-
-
+<script src="https://huggingface.co/deepsite/deepsite-badge.js"></script>
