@@ -1,7 +1,7 @@
 <Container>
-  <Name>cf-ddns</Name>
-  <Repository>yourname/cf-ddns:latest</Repository>
-  <Registry>docker.io</Registry>
+  <Name>cloudflare-ddns</Name>
+  <Repository>cloudflarednsupdater</Repository>
+  <Registry>ghcr.io/B0st0wn</Registry>
   <Network>bridge</Network>
   <MyIP>0.0.0.0</MyIP>
   <WebUI>http://[IP]:[PORT:8080]</WebUI>
