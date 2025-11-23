@@ -1,45 +1,42 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div style="margin-bottom: 2rem;">
+<div class="dashboard-section">
   {% if not token_present %}
   <!-- Setup Card -->
-  <div class="card" style="width: 100%; max-width: 100%;">
+  <div class="card">
     <h2>🔐 Configuration Setup</h2>
     <div class="card-content">
-      <p style="color: var(--text-secondary); margin-bottom: 1rem;">Enter your Cloudflare API token to get started.</p>
-      <form hx-post="/api/config" method="post" style="display: flex; gap: 0.75rem;">
-        <div class="form-group" style="flex: 1;">
-          <input type="password" name="token" placeholder="Paste your Cloudflare API token..." required
-            style="width: 100%;" />
+      <p class="info-text">Enter your Cloudflare API token to get started.</p>
+      <form hx-post="/api/config" method="post" class="stacked-form">
+        <div class="form-group">
+          <input type="password" name="token" placeholder="Paste your Cloudflare API token..." required />
         </div>
-        <button type="submit" style="align-self: flex-end;">Save</button>
+        <button type="submit">Save Token</button>
       </form>
     </div>
   </div>
 
   {% else %}
   <!-- Import Records Card - Full Width -->
-  <div class="card" style="width: 100%; margin-bottom: 2rem;">
+  <div class="card">
     <h2>📥 Import Records</h2>
     <div class="card-content">
-      <button hx-get="/api/zones" hx-target="#zones-list" hx-swap="innerHTML" style="width: 100%;">Load Zones from
+      <button hx-get="/api/zones" hx-target="#zones-list" hx-swap="innerHTML" class="btn-block">Load Zones from
         Cloudflare</button>
-      <div id="zones-list" style="margin-top: 1rem;"></div>
+      <div id="zones-list" class="zone-records"></div>
     </div>
   </div>
 
   <!-- Records Table Card -->
-  <div class="card" style="width: 100%; max-width: 100%;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+  <div class="card">
+    <div class="card-header">
       <h2 style="margin: 0;">📋 Configured Records</h2>
-      <button hx-post="/api/update-now" hx-swap="none" onclick="handleSync()"
-        style="background: var(--primary); color: white; padding: 0.6rem 1.2rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">🚀
-        Sync Now</button>
+      <button hx-post="/api/update-now" hx-swap="none" onclick="handleSync()">🚀 Sync Now</button>
     </div>
     {% if records %}
-    <div style="overflow-x: auto;">
-      <table>
+    <div class="table-wrapper">
+      <table class="records-table">
         <thead>
           <tr>
             <th>Domain Name</th>
@@ -55,9 +52,7 @@
           <tr>
             <td><strong>{{ r.name }}</strong></td>
             <td><span class="badge badge-success">{{ r.type or 'A' }}</span></td>
-            <td><code
-                style="background: var(--bg); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.9rem;">{{ r.content }}</code>
-            </td>
+            <td><code>{{ r.content }}</code></td>
             <td style="text-align: center;">
               <input type="checkbox" class="proxy-checkbox" data-record-id="{{ r.record_id }}" disabled
                 title="Loading proxy status..." />
@@ -75,9 +70,9 @@
       </table>
     </div>
     {% else %}
-    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);">
-      <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">📭 No records configured yet</p>
-      <p style="font-size: 0.9rem;">Load zones and import records to get started.</p>
+    <div class="empty-state">
+      <p>📭 No records configured yet</p>
+      <p>Load zones and import records to get started.</p>
     </div>
     {% endif %}
   </div>
@@ -87,7 +82,7 @@
 
 <script>
   function handleSync() {
-    alert('Sync initiated. Check back in a moment for results.');
+    alert('🚀 Sync initiated. Check back in a moment for results.');
   }
 
   function updateAutoFlag(recordId, checked) {
@@ -124,21 +119,21 @@
         const response = JSON.parse(evt.detail.xhr.response);
         const zones = response || [];
         if (zones.length === 0) {
-          document.getElementById('zones-list').innerHTML = '<p style="color: var(--text-secondary);">No zones found.</p>';
+          document.getElementById('zones-list').innerHTML = '<p class="info-text">No zones found.</p>';
           return;
         }
         let html = '';
         zones.forEach(zone => {
           html += `
-            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin-bottom: 0.75rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="zone-item">
+              <div class="zone-header">
                 <div>
                   <strong>${zone.name}</strong><br>
-                  <small style="color: var(--text-secondary);">${zone.id}</small>
+                  <small class="zone-meta">${zone.id}</small>
                 </div>
                 <button onclick="loadRecords('${zone.id}')" class="btn-small">Load Records</button>
               </div>
-              <div id="records-${zone.id}" style="margin-top: 0.75rem;"></div>
+              <div id="records-${zone.id}" class="zone-records"></div>
             </div>
           `;
         });
@@ -153,7 +148,7 @@
   function loadRecords(zoneId) {
     const target = document.getElementById('records-' + zoneId);
     if (!target) return;
-    target.innerHTML = '<p style="color: var(--text-secondary);"><span class="loading">⏳</span> Loading records...</p>';
+    target.innerHTML = '<p class="info-text"><span class="loading">⏳</span> Loading records...</p>';
 
     fetch('/api/zones/' + zoneId + '/records')
       .then(r => {
@@ -164,9 +159,9 @@
         const records = data.records || [];
         let html = '';
         if (records.length === 0) {
-          html = '<p style="color: var(--text-secondary);">No A/AAAA records found.</p>';
+          html = '<p class="info-text">No A/AAAA records found.</p>';
         } else {
-          html += '<div style="overflow-x: auto;"><table style="font-size: 0.9em;"><tr>'
+          html += '<div class="table-wrapper"><table class="mini-table"><tr>'
             + '<th><input type="checkbox" id="select-all-' + zoneId + '" onchange="selectAll(this, \'' + zoneId + '\')"></th>'
             + '<th>Name</th><th>Type</th><th>IP</th></tr>';
           records.forEach(rec => {
@@ -178,7 +173,7 @@
             </tr>`;
           });
           html += '</table></div>';
-          html += '<button onclick="importSelected(\'' + zoneId + '\')" style="margin-top: 0.75rem; width: 100%;">Import Selected Records</button>';
+          html += '<button onclick="importSelected(\'' + zoneId + '\')" class="btn-block">Import Selected Records</button>';
         }
         target.innerHTML = html;
       })

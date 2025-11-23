@@ -1,278 +1,759 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Cloudflare DDNS Updater</title>
-    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
-    <link rel="stylesheet" href="/static/style.css">
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      
-      :root {
-        --primary: #3b82f6;
-        --primary-dark: #1e40af;
-        --bg: #0f172a;
-        --bg-secondary: #1e293b;
-        --border: #334155;
-        --text: #f1f5f9;
-        --text-secondary: #cbd5e1;
-        --success: #10b981;
-        --danger: #ef4444;
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cloudflare DDNS Updater</title>
+  <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+  <script>
+    (function () {
+      try {
+        const stored = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = stored || (prefersDark ? 'dark' : 'light');
+        document.documentElement.dataset.theme = theme;
+      } catch (err) {
+        document.documentElement.dataset.theme = 'light';
       }
-      
-      html, body { height: 100%; }
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        line-height: 1.6;
+    })();
+  </script>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #f4f6fb;
+      --bg-secondary: #ffffff;
+      --nav-bg: #ffffff;
+      --border: #d5d7df;
+      --text: #131928;
+      --text-secondary: #4b5563;
+      --success: #16a34a;
+      --danger: #ef4444;
+      --shadow-soft: 0 18px 38px rgba(12, 18, 38, 0.12);
+      --shadow-card: 0 8px 28px rgba(15, 23, 42, 0.1);
+      --chip-bg: rgba(37, 99, 235, 0.08);
+      --muted-bg: rgba(15, 23, 42, 0.04);
+    }
+
+    :root[data-theme='dark'] {
+      --bg: #050505;
+      --bg-secondary: #121317;
+      --nav-bg: #0a0a0d;
+      --border: #1f2836;
+      --text: #f8fafc;
+      --text-secondary: #a9b4cc;
+      --shadow-soft: 0 20px 60px rgba(0, 0, 0, 0.65);
+      --shadow-card: 0 18px 45px rgba(0, 0, 0, 0.6);
+      --chip-bg: rgba(148, 163, 184, 0.14);
+      --muted-bg: rgba(148, 163, 184, 0.1);
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .navbar {
+      background: var(--nav-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 0;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow-soft);
+      transition: background 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .navbar-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary) 0%, #60a5fa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .brand-icon {
+      font-size: 1.7rem;
+    }
+
+    .brand-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: flex-end;
+    }
+
+    .control-chip {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      min-width: 150px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      transition: border 0.2s ease, transform 0.2s ease, background 0.3s ease;
+    }
+
+    .control-chip:hover {
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    .control-chip label,
+    .control-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .control-value {
+      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      font-size: 0.95rem;
+    }
+
+    .control-inline {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .theme-toggle {
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      box-shadow: var(--shadow-card);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .theme-toggle:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      width: 100%;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .dashboard-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-card);
+      transition: border-color 0.2s ease, transform 0.2s ease, background 0.3s ease;
+    }
+
+    .card:hover {
+      border-color: var(--primary);
+    }
+
+    .card h2 {
+      font-size: 1.15rem;
+      margin-bottom: 1rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-group label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.75rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      transition: border-color 0.2s, background 0.3s, color 0.3s;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
+      font-size: 0.95rem;
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px rgba(37, 99, 235, 0.35);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      box-shadow: none;
+    }
+
+    .btn-secondary:hover {
+      background: var(--muted-bg);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      box-shadow: 0 10px 20px rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-small {
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      border-radius: 10px;
+    }
+
+    .btn-block {
+      width: 100%;
+      display: inline-flex;
+      justify-content: center;
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+
+    table thead {
+      background: var(--muted-bg);
+      border-bottom: 2px solid var(--border);
+    }
+
+    table th {
+      padding: 0.85rem 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    table td {
+      padding: 0.85rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+
+    table tbody tr:hover {
+      background: var(--muted-bg);
+    }
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 14px;
+    }
+
+    .table-wrapper code {
+      background: var(--muted-bg);
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      display: inline-block;
+      border: 1px solid var(--border);
+    }
+
+    .records-table {
+      min-width: 640px;
+    }
+
+    .mini-table {
+      font-size: 0.9em;
+      min-width: 0;
+    }
+
+    .mini-table th {
+      text-transform: none;
+      letter-spacing: normal;
+      font-size: 0.8rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+    }
+
+    .badge-danger {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.5rem 0;
+    }
+
+    .info-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 0.5rem;
+    }
+
+    .success-text {
+      color: var(--success);
+    }
+
+    .error-text {
+      color: var(--danger);
+    }
+
+    .checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--primary);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .loading {
+      display: inline-block;
+      animation: spin 1s linear infinite;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-direction: row;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .status-pill[data-status="good"] .status-dot {
+      background: var(--success);
+    }
+
+    .status-pill[data-status="bad"] .status-dot {
+      background: var(--danger);
+    }
+
+    .status-label {
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+
+    .stacked-form {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .stacked-form .form-group {
+      flex: 1 1 220px;
+    }
+
+    .stacked-form button {
+      flex: 0 0 auto;
+    }
+
+    .zone-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .zone-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .zone-meta {
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
+
+    .zone-records {
+      margin-top: 0.75rem;
+    }
+
+    .zone-records .btn-block {
+      margin-top: 0.75rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-state p:first-child {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
       }
-      
-      .navbar {
-        background: var(--bg-secondary);
-        border-bottom: 1px solid var(--border);
-        padding: 1.5rem 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.5);
-      }
-      
-      .navbar h1 {
-        font-size: 1.8rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, var(--primary) 0%, #60a5fa 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
-      
+    }
+
+    @media (max-width: 1024px) {
       .container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 0 2rem;
+        padding: 0 1rem;
       }
-      
-      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; margin-bottom: 2rem; }
-      
-      .card {
-        background: var(--bg-secondary);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        transition: all 0.2s;
+
+      .brand h1 {
+        font-size: 1.3rem;
       }
-      
-      .card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(59,130,246,0.1); }
-      
-      .card h2 {
-        font-size: 1.1rem;
-        margin-bottom: 1rem;
-        color: var(--text);
-        display: flex; align-items: center; gap: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .navbar {
+        margin-bottom: 1.25rem;
       }
-      
-      .card-content { display: flex; flex-direction: column; gap: 0.75rem; }
-      
-      .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
-      
-      .form-group label {
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: var(--text-secondary);
+
+      .navbar-inner {
+        flex-direction: column;
+        align-items: flex-start;
       }
-      
-      input[type="text"], input[type="password"], input[type="number"], select {
-        background: var(--bg);
-        border: 1px solid var(--border);
-        color: var(--text);
-        padding: 0.75rem;
-        border-radius: 6px;
-        font-size: 0.95rem;
-        transition: border-color 0.2s;
-      }
-      
-      input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-      
-      button {
-        background: var(--primary);
-        color: white;
-        border: none;
-        padding: 0.75rem 1.5rem;
-        border-radius: 6px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-size: 0.95rem;
-      }
-      
-      button:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
-      button:active { transform: translateY(0); }
-      button:disabled { opacity: 0.5; cursor: not-allowed; }
-      
-      .btn-secondary { background: var(--bg); border: 1px solid var(--border); color: var(--text); }
-      .btn-secondary:hover { background: var(--border); }
-      
-      .btn-danger { background: var(--danger); }
-      .btn-danger:hover { background: #dc2626; }
-      
-      .btn-small { padding: 0.5rem 1rem; font-size: 0.85rem; }
-      
-      table {
+
+      .header-controls {
         width: 100%;
-        border-collapse: collapse;
-        margin-top: 1rem;
+        justify-content: flex-start;
       }
-      
-      table thead {
-        background: var(--bg);
-        border-bottom: 2px solid var(--border);
+
+      .control-chip,
+      .theme-toggle {
+        width: 100%;
       }
-      
-      table th {
-        padding: 1rem;
-        text-align: left;
-        font-weight: 600;
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+
+      .control-inline {
+        flex-direction: column;
+        align-items: stretch;
       }
-      
-      table td {
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid var(--border);
+
+      .control-inline button,
+      .control-inline input {
+        width: 100%;
+      }
+
+      .card {
+        padding: 1.25rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
         font-size: 0.95rem;
       }
-      
-      table tbody tr { transition: background 0.1s; }
-      table tbody tr:hover { background: var(--bg); }
-      
-      .badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
+
+      .container {
+        padding: 0 0.75rem;
       }
-      
-      .badge-success { background: rgba(16,185,129,0.2); color: var(--success); }
-      .badge-danger { background: rgba(239,68,68,0.2); color: var(--danger); }
-      
-      hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
-      
-      .info-text { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; }
-      .success-text { color: var(--success); }
-      .error-text { color: var(--danger); }
-      
-      .checkbox-wrapper { display: flex; align-items: center; gap: 0.75rem; }
-      input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); }
-      
-      .section-divider { margin: 2rem 0; }
-      
-      .action-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-      
-      .loading { display: inline-block; animation: spin 1s linear infinite; }
-      @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
-    <script>
-      // Load polling interval on page load
-      window.addEventListener('load', function() {
+
+      .card {
+        padding: 1rem;
+        border-radius: 14px;
+      }
+
+      table th,
+      table td {
+        padding: 0.65rem;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .card-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
+  <script>
+    // Load polling interval on page load
+    window.addEventListener('load', function () {
+      fetch('/api/status')
+        .then(r => r.json())
+        .then(data => {
+          if (data.polling_interval) {
+            document.getElementById('polling-interval').value = data.polling_interval;
+          }
+        })
+        .catch(e => console.error('Failed to load polling interval:', e));
+    });
+
+    function setPollingInterval() {
+      const interval = parseInt(document.getElementById('polling-interval').value);
+      if (isNaN(interval) || interval < 60) {
+        alert('Polling interval must be at least 60 seconds');
+        return;
+      }
+      fetch('/api/polling-interval?interval=' + interval, { method: 'POST' })
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(data => {
+          alert('✅ Polling interval updated to ' + data.polling_interval + ' seconds');
+        })
+        .catch(e => {
+          alert('❌ Failed to update: ' + e.message);
+        });
+    }
+
+    // Load current IP and API status on page load
+    window.addEventListener('load', function () {
+      function updateApiBadge(tokenConfigured) {
+        const el = document.getElementById('api-status');
+        if (!el) return;
+        const label = el.querySelector('.status-label');
+        el.dataset.status = tokenConfigured ? 'good' : 'bad';
+        if (label) {
+          label.textContent = tokenConfigured ? '🔒 API Token Configured' : '⚠️ API Token Missing';
+        }
+      }
+
+      function refreshStatus() {
         fetch('/api/status')
           .then(r => r.json())
           .then(data => {
             if (data.polling_interval) {
-              document.getElementById('polling-interval').value = data.polling_interval;
+              const pi = document.getElementById('polling-interval');
+              if (pi) pi.value = data.polling_interval;
             }
+            if (data.wan_ip) {
+              const ipEl = document.getElementById('current-ip');
+              if (ipEl) ipEl.textContent = data.wan_ip;
+            }
+            updateApiBadge(Boolean(data.token_configured));
           })
-          .catch(e => console.error('Failed to load polling interval:', e));
-      });
-
-      function setPollingInterval() {
-        const interval = parseInt(document.getElementById('polling-interval').value);
-        if (isNaN(interval) || interval < 60) {
-          alert('Polling interval must be at least 60 seconds');
-          return;
-        }
-        fetch('/api/polling-interval?interval=' + interval, {method: 'POST'})
-          .then(r => {
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            return r.json();
-          })
-          .then(data => {
-            alert('✅ Polling interval updated to ' + data.polling_interval + ' seconds');
-          })
-          .catch(e => {
-            alert('❌ Failed to update: ' + e.message);
-          });
+          .catch(e => console.error('Failed to load status:', e));
       }
 
-      // Load current IP and API status on page load
-      window.addEventListener('load', function() {
-        function updateApiBadge(tokenConfigured) {
-          const el = document.getElementById('api-status');
-          if (!el) return;
-          if (tokenConfigured) {
-            el.innerHTML = '<span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;"></span>' +
-                           '<span style="color:white;">✅ API Token Configured</span>';
-          } else {
-            el.innerHTML = '<span style="display:inline-block;width:8px;height:8px;background:#ef4444;border-radius:50%;"></span>' +
-                           '<span style="color:white;">⚠️ API Token Missing</span>';
-          }
+      // initial load
+      refreshStatus();
+
+      // Refresh status every 30 seconds
+      setInterval(refreshStatus, 30000);
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const toggle = document.getElementById('theme-toggle');
+      if (!toggle) return;
+
+      const applyTheme = (theme) => {
+        document.documentElement.dataset.theme = theme;
+        toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+        toggle.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+        toggle.setAttribute('aria-pressed', theme === 'dark');
+      };
+
+      const storedTheme = (() => {
+        try {
+          return localStorage.getItem('theme');
+        } catch (err) {
+          console.warn('Unable to read stored theme preference', err);
+          return null;
         }
+      })();
 
-        function refreshStatus() {
-          fetch('/api/status')
-            .then(r => r.json())
-            .then(data => {
-              if (data.polling_interval) {
-                const pi = document.getElementById('polling-interval');
-                if (pi) pi.value = data.polling_interval;
-              }
-              if (data.wan_ip) {
-                const ipEl = document.getElementById('current-ip');
-                if (ipEl) ipEl.textContent = data.wan_ip;
-              }
-              updateApiBadge(Boolean(data.token_configured));
-            })
-            .catch(e => console.error('Failed to load status:', e));
+      applyTheme(document.documentElement.dataset.theme || storedTheme || 'light');
+
+      toggle.addEventListener('click', function () {
+        const newTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        applyTheme(newTheme);
+        try {
+          localStorage.setItem('theme', newTheme);
+        } catch (err) {
+          console.warn('Unable to persist theme preference', err);
         }
-
-        // initial load
-        refreshStatus();
-
-        // Refresh status every 30 seconds
-        setInterval(refreshStatus, 30000);
       });
-    </script>
-  </head>
-  <body>
-    <div class="navbar">
-      <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
-        <h1 style="margin: 0;">⚙️ Cloudflare DDNS Updater</h1>
-        <div style="display: flex; align-items: center; gap: 2rem;">
-          <!-- Polling Interval Control -->
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <label style="color: white; font-size: 0.85rem; white-space: nowrap;">⏱️ Poll (s):</label>
-            <input type="number" id="polling-interval" min="60" step="60" value="300" style="width: 60px; padding: 0.4rem; font-size: 0.85rem; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: white;" />
-            <button onclick="setPollingInterval()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; transition: background 0.2s;">Set</button>
-          </div>
-          <!-- Current IP Display -->
-          <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 6px;">
-            <span style="color: #60a5fa;">🌐 IP:</span>
-            <span id="current-ip" style="color: white; font-family: monospace; font-weight: 500;">Loading...</span>
-          </div>
-          <!-- API Status Badge -->
-          <div id="api-status" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 6px;">
-            <span style="display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span>
-            <span style="color: white;">✅ API Token Configured</span>
-          </div>
+    });
+  </script>
+</head>
+
+<body>
+  <header class="navbar">
+    <div class="container navbar-inner">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">🛰️</span>
+        <div>
+          <h1>Cloudflare DDNS Updater</h1>
+          <p class="brand-subtitle">Always-on DNS sync</p>
         </div>
       </div>
+      <div class="header-controls">
+        <div class="control-chip">
+          <label for="polling-interval">⏱️ Poll (s)</label>
+          <div class="control-inline">
+            <input type="number" id="polling-interval" min="60" step="60" value="300" />
+            <button type="button" onclick="setPollingInterval()">Set</button>
+          </div>
+        </div>
+        <div class="control-chip">
+          <span class="control-label">🌐 IP</span>
+          <span id="current-ip" class="control-value">Loading...</span>
+        </div>
+        <div class="control-chip status-pill" id="api-status" data-status="unknown">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="status-label">🔐 Checking token…</span>
+        </div>
+        <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">🌙</button>
+      </div>
     </div>
-    
-    <div class="container">
-      {% block content %}{% endblock %}
-    </div>
-  </body>
+  </header>
+
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+
 </html>
