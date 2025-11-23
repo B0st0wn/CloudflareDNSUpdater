@@ -18,51 +18,22 @@
     </div>
   </div>
   {% else %}
-  <!-- Status & Configuration Cards -->
-  <div
-    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
-
-    <!-- Configuration Card -->
-    <div class="card">
-      <h2>✅ Status</h2>
-      <div class="card-content">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <span style="color: var(--success); font-size: 1.2rem;">●</span>
-          <span>API Token Configured</span>
-        </div>
-      </div>
+  <!-- Import Records Card - Full Width -->
+  <div class="card" style="width: 100%; margin-bottom: 2rem;">
+    <h2>📥 Import Records</h2>
+    <div class="card-content">
+      <button hx-get="/api/zones" hx-target="#zones-list" hx-swap="innerHTML" style="width: 100%;">Load Zones from
+        Cloudflare</button>
+      <div id="zones-list" style="margin-top: 1rem;"></div>
     </div>
-
-    <!-- Polling Interval Card -->
-    <div class="card">
-      <h2>⏱️ Polling Interval</h2>
-      <div class="card-content">
-        <div class="form-group">
-          <label>Update Frequency (seconds)</label>
-          <div style="display: flex; gap: 0.5rem;">
-            <input type="number" id="polling-interval" min="60" step="60" value="300" style="flex: 1;" />
-            <button onclick="setPollingInterval()" class="btn-small">Update</button>
-          </div>
-          <small class="info-text">Minimum 60 seconds. Controls how often we check for IP changes.</small>
-        </div>
-      </div>
-    </div>
-
-    <!-- Import Records Card -->
-    <div class="card">
-      <h2>📥 Import Records</h2>
-      <div class="card-content">
-        <button hx-get="/api/zones" hx-target="#zones-list" hx-swap="innerHTML" style="width: 100%;">Load Zones from
-          Cloudflare</button>
-        <div id="zones-list" style="margin-top: 1rem;"></div>
-      </div>
-    </div>
-
   </div>
 
   <!-- Records Table Card -->
   <div class="card" style="width: 100%; max-width: 100%;">
-    <h2>📋 Configured Records</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h2 style="margin: 0;">📋 Configured Records</h2>
+      <button hx-post="/api/update-now" hx-swap="none" onclick="handleSync()" style="background: var(--primary); color: white; padding: 0.6rem 1.2rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">🚀 Sync Now</button>
+    </div>
     {% if records %}
     <div style="overflow-x: auto;">
       <table>
@@ -108,53 +79,12 @@
     {% endif %}
   </div>
 
-  <!-- Actions Card -->
-  <div class="card" style="margin-top: 2rem;">
-    <h2>🚀 Quick Actions</h2>
-    <div class="card-content">
-      <button hx-post="/api/update-now" hx-swap="none" onclick="handleSync()"
-        style="width: 100%; background: var(--success);">Sync Now</button>
-      <small class="info-text">Manually trigger an immediate DNS update check.</small>
-    </div>
-  </div>
-
   {% endif %}
 </div>
 
 <script>
   function handleSync() {
     alert('Sync initiated. Check back in a moment for results.');
-  }
-
-  // Load polling interval on page load
-  window.addEventListener('load', function () {
-    fetch('/api/status')
-      .then(r => r.json())
-      .then(data => {
-        if (data.polling_interval) {
-          document.getElementById('polling-interval').value = data.polling_interval;
-        }
-      })
-      .catch(e => console.error('Failed to load polling interval:', e));
-  });
-
-  function setPollingInterval() {
-    const interval = parseInt(document.getElementById('polling-interval').value);
-    if (isNaN(interval) || interval < 60) {
-      alert('Polling interval must be at least 60 seconds');
-      return;
-    }
-    fetch('/api/polling-interval?interval=' + interval, { method: 'POST' })
-      .then(r => {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      })
-      .then(data => {
-        alert('✅ Polling interval updated to ' + data.polling_interval + ' seconds');
-      })
-      .catch(e => {
-        alert('❌ Failed to update: ' + e.message);
-      });
   }
 
   function updateAutoFlag(recordId, checked) {

@@ -52,7 +52,22 @@ async def api_status():
     token = cfg.load_token()
     records = cfg.load_records().get("records", [])
     polling_interval = cfg.load_polling_interval()
-    return {"token_configured": bool(token), "record_count": len(records), "polling_interval": polling_interval}
+    
+    # Get current WAN IP
+    wan_ip = "Unknown"
+    try:
+        from .ip_detect import detect_wan_ip
+        async with httpx.AsyncClient() as client:
+            wan_ip = await detect_wan_ip(client)
+    except Exception as e:
+        logger.error(f"Failed to detect WAN IP: {e}")
+    
+    return {
+        "token_configured": bool(token),
+        "record_count": len(records),
+        "polling_interval": polling_interval,
+        "wan_ip": wan_ip
+    }
 
 @app.post("/api/polling-interval")
 async def api_set_polling_interval(interval: int = None):
