@@ -207,28 +207,42 @@
           });
       }
 
-      // Load current IP on page load
+      // Load current IP and API status on page load
       window.addEventListener('load', function() {
-        fetch('/api/status')
-          .then(r => r.json())
-          .then(data => {
-            if (data.wan_ip) {
-              document.getElementById('current-ip').textContent = data.wan_ip;
-            }
-          })
-          .catch(e => console.error('Failed to load IP:', e));
+        function updateApiBadge(tokenConfigured) {
+          const el = document.getElementById('api-status');
+          if (!el) return;
+          if (tokenConfigured) {
+            el.innerHTML = '<span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;"></span>' +
+                           '<span style="color:white;">✅ API Token Configured</span>';
+          } else {
+            el.innerHTML = '<span style="display:inline-block;width:8px;height:8px;background:#ef4444;border-radius:50%;"></span>' +
+                           '<span style="color:white;">⚠️ API Token Missing</span>';
+          }
+        }
 
-        // Refresh IP every 30 seconds
-        setInterval(function() {
+        function refreshStatus() {
           fetch('/api/status')
             .then(r => r.json())
             .then(data => {
-              if (data.wan_ip) {
-                document.getElementById('current-ip').textContent = data.wan_ip;
+              if (data.polling_interval) {
+                const pi = document.getElementById('polling-interval');
+                if (pi) pi.value = data.polling_interval;
               }
+              if (data.wan_ip) {
+                const ipEl = document.getElementById('current-ip');
+                if (ipEl) ipEl.textContent = data.wan_ip;
+              }
+              updateApiBadge(Boolean(data.token_configured));
             })
-            .catch(e => console.error('Failed to load IP:', e));
-        }, 30000);
+            .catch(e => console.error('Failed to load status:', e));
+        }
+
+        // initial load
+        refreshStatus();
+
+        // Refresh status every 30 seconds
+        setInterval(refreshStatus, 30000);
       });
     </script>
   </head>
