@@ -3,123 +3,121 @@
 {% block content %}
 <div style="margin-bottom: 2rem;">
   {% if not token_present %}
-    <!-- Setup Card -->
-    <div class="card" style="max-width: 500px;">
-      <h2>🔐 Configuration Setup</h2>
-      <div class="card-content">
-        <p style="color: var(--text-secondary); margin-bottom: 1rem;">Enter your Cloudflare API token to get started.</p>
-        <form hx-post="/api/config" method="post" style="display: flex; gap: 0.75rem;">
-          <div class="form-group" style="flex: 1;">
-            <input type="password" name="token" placeholder="Paste your Cloudflare API token..." required style="width: 100%;" />
-          </div>
-          <button type="submit" style="align-self: flex-end;">Save</button>
-        </form>
-      </div>
+  <!-- Setup Card -->
+  <div class="card" style="max-width: 500px;">
+    <h2>🔐 Configuration Setup</h2>
+    <div class="card-content">
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">Enter your Cloudflare API token to get started.</p>
+      <form hx-post="/api/config" method="post" style="display: flex; gap: 0.75rem;">
+        <div class="form-group" style="flex: 1;">
+          <input type="password" name="token" placeholder="Paste your Cloudflare API token..." required
+            style="width: 100%;" />
+        </div>
+        <button type="submit" style="align-self: flex-end;">Save</button>
+      </form>
     </div>
+  </div>
   {% else %}
-    <!-- Status & Configuration Cards -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
-      
-      <!-- Configuration Card -->
-      <div class="card">
-        <h2>✅ Status</h2>
-        <div class="card-content">
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <span style="color: var(--success); font-size: 1.2rem;">●</span>
-            <span>API Token Configured</span>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Polling Interval Card -->
-      <div class="card">
-        <h2>⏱️ Polling Interval</h2>
-        <div class="card-content">
-          <div class="form-group">
-            <label>Update Frequency (seconds)</label>
-            <div style="display: flex; gap: 0.5rem;">
-              <input type="number" id="polling-interval" min="60" step="60" value="300" style="flex: 1;" />
-              <button onclick="setPollingInterval()" class="btn-small">Update</button>
-            </div>
-            <small class="info-text">Minimum 60 seconds. Controls how often we check for IP changes.</small>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Import Records Card -->
-      <div class="card">
-        <h2>📥 Import Records</h2>
-        <div class="card-content">
-          <button hx-get="/api/zones" hx-target="#zones-list" hx-swap="innerHTML" style="width: 100%;">Load Zones from Cloudflare</button>
-          <div id="zones-list" style="margin-top: 1rem;"></div>
-        </div>
-      </div>
-      
-    </div>
-    
-    <!-- Records Table Card -->
+  <!-- Status & Configuration Cards -->
+  <div
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
+
+    <!-- Configuration Card -->
     <div class="card">
-      <h2>📋 Configured Records</h2>
-      {% if records %}
-        <div style="overflow-x: auto;">
-          <table>
-            <thead>
-              <tr>
-                <th>Domain Name</th>
-                <th>Type</th>
-                <th>IP Address</th>
-                <th style="text-align: center;">Proxy</th>
-                <th style="text-align: center;">Auto-Update</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="records-body">
-              {% for r in records %}
-                <tr>
-                  <td><strong>{{ r.name }}</strong></td>
-                  <td><span class="badge badge-success">{{ r.type or 'A' }}</span></td>
-                  <td><code style="background: var(--bg); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.9rem;">{{ r.content }}</code></td>
-                  <td style="text-align: center;">
-                    <input 
-                      type="checkbox" 
-                      class="proxy-checkbox"
-                      data-record-id="{{ r.record_id }}"
-                      disabled
-                      title="Loading proxy status..."
-                    />
-                  </td>
-                  <td style="text-align: center;">
-                    <input 
-                      type="checkbox" 
-                      {% if r.auto_update %}checked{% endif %}
-                      onchange="updateAutoFlag('{{ r.record_id }}', this.checked)"
-                    />
-                  </td>
-                  <td>
-                    <button onclick="deleteRecord('{{ r.record_id }}')" class="btn-danger btn-small">Delete</button>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% else %}
-        <div style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);">
-          <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">📭 No records configured yet</p>
-          <p style="font-size: 0.9rem;">Load zones and import records to get started.</p>
-        </div>
-      {% endif %}
-    </div>
-    
-    <!-- Actions Card -->
-    <div class="card" style="margin-top: 2rem;">
-      <h2>🚀 Quick Actions</h2>
+      <h2>✅ Status</h2>
       <div class="card-content">
-        <button hx-post="/api/update-now" hx-swap="none" onclick="handleSync()" style="width: 100%; background: var(--success);">Sync Now</button>
-        <small class="info-text">Manually trigger an immediate DNS update check.</small>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span style="color: var(--success); font-size: 1.2rem;">●</span>
+          <span>API Token Configured</span>
+        </div>
       </div>
     </div>
-    
+
+    <!-- Polling Interval Card -->
+    <div class="card">
+      <h2>⏱️ Polling Interval</h2>
+      <div class="card-content">
+        <div class="form-group">
+          <label>Update Frequency (seconds)</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="number" id="polling-interval" min="60" step="60" value="300" style="flex: 1;" />
+            <button onclick="setPollingInterval()" class="btn-small">Update</button>
+          </div>
+          <small class="info-text">Minimum 60 seconds. Controls how often we check for IP changes.</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import Records Card -->
+    <div class="card">
+      <h2>📥 Import Records</h2>
+      <div class="card-content">
+        <button hx-get="/api/zones" hx-target="#zones-list" hx-swap="innerHTML" style="width: 100%;">Load Zones from
+          Cloudflare</button>
+        <div id="zones-list" style="margin-top: 1rem;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Records Table Card -->
+  <div class="card" style="width: 100%; max-width: 100%;">
+    <h2>📋 Configured Records</h2>
+    {% if records %}
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Domain Name</th>
+            <th>Type</th>
+            <th>IP Address</th>
+            <th style="text-align: center;">Proxy</th>
+            <th style="text-align: center;">Auto-Update</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="records-body">
+          {% for r in records %}
+          <tr>
+            <td><strong>{{ r.name }}</strong></td>
+            <td><span class="badge badge-success">{{ r.type or 'A' }}</span></td>
+            <td><code
+                style="background: var(--bg); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.9rem;">{{ r.content }}</code>
+            </td>
+            <td style="text-align: center;">
+              <input type="checkbox" class="proxy-checkbox" data-record-id="{{ r.record_id }}" disabled
+                title="Loading proxy status..." />
+            </td>
+            <td style="text-align: center;">
+              <input type="checkbox" {% if r.auto_update %}checked{% endif %}
+                onchange="updateAutoFlag('{{ r.record_id }}', this.checked)" />
+            </td>
+            <td>
+              <button onclick="deleteRecord('{{ r.record_id }}')" class="btn-danger btn-small">Delete</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);">
+      <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">📭 No records configured yet</p>
+      <p style="font-size: 0.9rem;">Load zones and import records to get started.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Actions Card -->
+  <div class="card" style="margin-top: 2rem;">
+    <h2>🚀 Quick Actions</h2>
+    <div class="card-content">
+      <button hx-post="/api/update-now" hx-swap="none" onclick="handleSync()"
+        style="width: 100%; background: var(--success);">Sync Now</button>
+      <small class="info-text">Manually trigger an immediate DNS update check.</small>
+    </div>
+  </div>
+
   {% endif %}
 </div>
 
@@ -129,7 +127,7 @@
   }
 
   // Load polling interval on page load
-  window.addEventListener('load', function() {
+  window.addEventListener('load', function () {
     fetch('/api/status')
       .then(r => r.json())
       .then(data => {
@@ -146,7 +144,7 @@
       alert('Polling interval must be at least 60 seconds');
       return;
     }
-    fetch('/api/polling-interval?interval=' + interval, {method: 'POST'})
+    fetch('/api/polling-interval?interval=' + interval, { method: 'POST' })
       .then(r => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
@@ -160,7 +158,7 @@
   }
 
   function updateAutoFlag(recordId, checked) {
-    fetch('/api/records?record_id=' + encodeURIComponent(recordId) + '&auto_update=' + checked, {method: 'PATCH'})
+    fetch('/api/records?record_id=' + encodeURIComponent(recordId) + '&auto_update=' + checked, { method: 'PATCH' })
       .then(r => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
@@ -173,7 +171,7 @@
 
   function deleteRecord(recordId) {
     if (!confirm('Are you sure you want to delete this record? This cannot be undone.')) return;
-    fetch('/api/records?id=' + encodeURIComponent(recordId), {method: 'DELETE'})
+    fetch('/api/records?id=' + encodeURIComponent(recordId), { method: 'DELETE' })
       .then(r => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
@@ -187,7 +185,7 @@
   }
 
   // Render zones and create record load buttons
-  document.body.addEventListener('htmx:afterSwap', function(evt) {
+  document.body.addEventListener('htmx:afterSwap', function (evt) {
     if (evt.detail.target.id === 'zones-list') {
       try {
         const response = JSON.parse(evt.detail.xhr.response);
@@ -212,7 +210,7 @@
           `;
         });
         document.getElementById('zones-list').innerHTML = html;
-      } catch(e) {
+      } catch (e) {
         document.getElementById('zones-list').innerHTML = '<p class="error-text">Error: ' + e.message + '</p>';
         console.error('Zones parse error:', e);
       }
@@ -223,7 +221,7 @@
     const target = document.getElementById('records-' + zoneId);
     if (!target) return;
     target.innerHTML = '<p style="color: var(--text-secondary);"><span class="loading">⏳</span> Loading records...</p>';
-    
+
     fetch('/api/zones/' + zoneId + '/records')
       .then(r => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -265,7 +263,7 @@
   function importSelected(zoneId) {
     const checkboxes = document.querySelectorAll('.record-checkbox-' + zoneId + ':checked');
     const recordIds = Array.from(checkboxes).map(cb => cb.dataset.recordId);
-    
+
     if (recordIds.length === 0) {
       alert('Please select at least one record to import.');
       return;
@@ -273,25 +271,25 @@
 
     fetch('/api/import-records', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({zone_id: zoneId, record_ids: recordIds})
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ zone_id: zoneId, record_ids: recordIds })
     })
-    .then(r => {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(data => {
-      alert('✅ Imported ' + data.imported + ' record(s). Refreshing...');
-      location.reload();
-    })
-    .catch(e => {
-      alert('❌ Import failed: ' + e.message);
-      console.error('Import error:', e);
-    });
+      .then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(data => {
+        alert('✅ Imported ' + data.imported + ' record(s). Refreshing...');
+        location.reload();
+      })
+      .catch(e => {
+        alert('❌ Import failed: ' + e.message);
+        console.error('Import error:', e);
+      });
   }
 
   // Sort records table by name on page load
-  window.addEventListener('load', function() {
+  window.addEventListener('load', function () {
     sortRecordsTable();
     loadProxyStatuses();
   });
@@ -299,14 +297,14 @@
   function sortRecordsTable() {
     const tbody = document.getElementById('records-body');
     if (!tbody) return;
-    
+
     const rows = Array.from(tbody.querySelectorAll('tr'));
     rows.sort((a, b) => {
       const aName = a.cells[0]?.textContent.trim() || '';
       const bName = b.cells[0]?.textContent.trim() || '';
       return aName.localeCompare(bName);
     });
-    
+
     rows.forEach(row => tbody.appendChild(row));
   }
 
@@ -323,7 +321,7 @@
           checkbox.checked = data.proxied;
           checkbox.disabled = false;
           checkbox.title = 'Toggle proxy (orange cloud) status';
-          checkbox.onchange = function() {
+          checkbox.onchange = function () {
             updateProxyStatus(recordId, this.checked);
           };
         })
@@ -335,7 +333,7 @@
   }
 
   function updateProxyStatus(recordId, proxied) {
-    fetch('/api/records/' + encodeURIComponent(recordId) + '/proxy?proxied=' + proxied, {method: 'PATCH'})
+    fetch('/api/records/' + encodeURIComponent(recordId) + '/proxy?proxied=' + proxied, { method: 'PATCH' })
       .then(r => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
