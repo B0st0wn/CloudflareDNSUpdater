@@ -79,17 +79,33 @@
     }
 
     .navbar-inner {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: auto minmax(180px, 1fr) minmax(280px, auto) auto;
       align-items: center;
       gap: 1rem;
-      flex-wrap: wrap;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1 1 auto;
+      min-width: 0;
+      flex-wrap: nowrap;
     }
 
     .brand {
       display: flex;
       align-items: center;
       gap: 0.75rem;
+      min-width: 0;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      min-width: 0;
     }
 
     .brand h1 {
@@ -99,23 +115,48 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-    }
-
-    .brand-icon {
-      font-size: 1.7rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .brand-subtitle {
       font-size: 0.8rem;
       color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .menu-toggle {
+      border: 1px solid var(--border);
+      background: var(--primary);
+      color: white;
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      font-size: 1.3rem;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-card);
+      transition: transform 0.2s ease, background 0.3s ease;
+    }
+
+    .menu-toggle:active {
+      transform: scale(0.96);
     }
 
     .header-controls {
       display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.75rem;
       justify-content: flex-end;
+      align-items: stretch;
+      gap: 0.75rem;
     }
 
     .control-chip {
@@ -130,6 +171,31 @@
       flex-direction: column;
       gap: 0.35rem;
       transition: border 0.2s ease, transform 0.2s ease, background 0.3s ease;
+    }
+
+    .combined-chip {
+      display: flex;
+      gap: 1rem;
+      min-width: 280px;
+      align-items: stretch;
+    }
+
+    .combined-chip .combined-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    .combined-chip .status-section {
+      justify-content: center;
+    }
+
+    .status-section .status-pill {
+      width: 100%;
+      padding: 0.4rem 0.75rem;
+      min-width: 0;
     }
 
     .control-chip:hover {
@@ -157,13 +223,23 @@
       gap: 0.5rem;
     }
 
+    .ip-chip {
+      text-align: center;
+      min-width: 180px;
+      justify-self: center;
+    }
+
+    .ip-chip .control-value {
+      font-size: 1.1rem;
+    }
+
     .theme-toggle {
       border: 1px solid var(--border);
       background: var(--bg-secondary);
       color: var(--text);
       width: 44px;
       height: 44px;
-      border-radius: 50%;
+      border-radius: 999px;
       box-shadow: var(--shadow-card);
       display: inline-flex;
       align-items: center;
@@ -171,6 +247,7 @@
       font-size: 1.2rem;
       cursor: pointer;
       transition: background 0.3s ease, transform 0.2s ease;
+      justify-self: end;
     }
 
     .theme-toggle:hover {
@@ -181,7 +258,7 @@
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 0 2rem;
+      padding: 0 clamp(1rem, 4vw, 2rem);
       width: 100%;
     }
 
@@ -362,6 +439,7 @@
 
     .table-wrapper {
       width: 100%;
+      max-width: 100%;
       overflow-x: auto;
       border-radius: 14px;
     }
@@ -559,17 +637,33 @@
       }
 
       .navbar-inner {
-        flex-direction: column;
-        align-items: flex-start;
+        grid-template-columns: auto 1fr auto;
       }
 
-      .header-controls {
-        width: 100%;
+      .brand-group {
+        width: auto;
         justify-content: flex-start;
       }
 
-      .control-chip,
-      .theme-toggle {
+      .menu-toggle {
+        display: inline-flex;
+      }
+
+      .header-controls {
+        display: none !important;
+        grid-column: 1 / -1;
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        margin-top: 0.75rem;
+      }
+
+      .navbar.menu-open .header-controls {
+        display: flex !important;
+      }
+
+      .control-chip {
         width: 100%;
       }
 
@@ -581,6 +675,18 @@
       .control-inline button,
       .control-inline input {
         width: 100%;
+      }
+
+      .brand-text {
+        display: none;
+      }
+
+      .brand h1 {
+        font-size: 1.25rem;
+      }
+
+      .brand-subtitle {
+        font-size: 0.75rem;
       }
 
       .card {
@@ -616,6 +722,7 @@
         align-items: stretch;
       }
     }
+
   </style>
   <script>
     // Load polling interval on page load
@@ -687,67 +794,98 @@
 
     document.addEventListener('DOMContentLoaded', function () {
       const toggle = document.getElementById('theme-toggle');
-      if (!toggle) return;
+      if (toggle) {
+        const applyTheme = (theme) => {
+          document.documentElement.dataset.theme = theme;
+          toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+          toggle.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+          toggle.setAttribute('aria-pressed', theme === 'dark');
+        };
 
-      const applyTheme = (theme) => {
-        document.documentElement.dataset.theme = theme;
-        toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
-        toggle.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
-        toggle.setAttribute('aria-pressed', theme === 'dark');
-      };
+        const storedTheme = (() => {
+          try {
+            return localStorage.getItem('theme');
+          } catch (err) {
+            console.warn('Unable to read stored theme preference', err);
+            return null;
+          }
+        })();
 
-      const storedTheme = (() => {
-        try {
-          return localStorage.getItem('theme');
-        } catch (err) {
-          console.warn('Unable to read stored theme preference', err);
-          return null;
-        }
-      })();
+        applyTheme(document.documentElement.dataset.theme || storedTheme || 'light');
 
-      applyTheme(document.documentElement.dataset.theme || storedTheme || 'light');
+        toggle.addEventListener('click', function () {
+          const newTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+          applyTheme(newTheme);
+          try {
+            localStorage.setItem('theme', newTheme);
+          } catch (err) {
+            console.warn('Unable to persist theme preference', err);
+          }
+        });
+      }
 
-      toggle.addEventListener('click', function () {
-        const newTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-        applyTheme(newTheme);
-        try {
-          localStorage.setItem('theme', newTheme);
-        } catch (err) {
-          console.warn('Unable to persist theme preference', err);
-        }
-      });
+      const menuToggle = document.getElementById('menu-toggle');
+      const navbar = document.getElementById('main-navbar');
+      if (menuToggle && navbar) {
+        menuToggle.setAttribute('aria-expanded', 'false');
+        const mobileMedia = window.matchMedia('(max-width: 768px)');
+        const closeMenuOnDesktop = () => {
+          if (!mobileMedia.matches) {
+            navbar.classList.remove('menu-open');
+            menuToggle.setAttribute('aria-expanded', 'false');
+          }
+        };
+
+        menuToggle.addEventListener('click', function () {
+          const open = navbar.classList.toggle('menu-open');
+          menuToggle.setAttribute('aria-expanded', String(open));
+        });
+
+        mobileMedia.addEventListener('change', closeMenuOnDesktop);
+      }
     });
   </script>
 </head>
 
 <body>
-  <header class="navbar">
+  <header class="navbar" id="main-navbar">
     <div class="container navbar-inner">
-      <div class="brand">
-        <span class="brand-icon" aria-hidden="true">🛰️</span>
-        <div>
-          <h1>Cloudflare DDNS Updater</h1>
-          <p class="brand-subtitle">Always-on DNS sync</p>
-        </div>
-      </div>
-      <div class="header-controls">
-        <div class="control-chip">
-          <label for="polling-interval">⏱️ Poll (s)</label>
-          <div class="control-inline">
-            <input type="number" id="polling-interval" min="60" step="60" value="300" />
-            <button type="button" onclick="setPollingInterval()">Set</button>
+      <div class="brand-group">
+        <button type="button" id="menu-toggle" class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">
+          ☰
+        </button>
+        <div class="brand" aria-label="Cloudflare DDNS Updater">
+          <span class="brand-icon" aria-hidden="true">🛰️</span>
+          <div class="brand-text">
+            <h1>Cloudflare DDNS Updater</h1>
+            <p class="brand-subtitle">Always-on DNS sync</p>
           </div>
         </div>
-        <div class="control-chip">
-          <span class="control-label">🌐 IP</span>
-          <span id="current-ip" class="control-value">Loading...</span>
-        </div>
-        <div class="control-chip status-pill" id="api-status" data-status="unknown">
-          <span class="status-dot" aria-hidden="true"></span>
-          <span class="status-label">🔐 Checking token…</span>
-        </div>
-        <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">🌙</button>
       </div>
+      <div class="control-chip ip-chip">
+        <span class="control-label">🌐 IP</span>
+        <span id="current-ip" class="control-value">Loading...</span>
+      </div>
+      <div class="header-controls">
+        <div class="control-chip combined-chip">
+          <div class="combined-section">
+            <label for="polling-interval">⏱️ Poll (s)</label>
+            <div class="control-inline">
+              <input type="number" id="polling-interval" min="60" step="60" value="300" />
+              <button type="button" onclick="setPollingInterval()">Set</button>
+            </div>
+          </div>
+          <div class="combined-section status-section">
+            <span class="control-label">API Status</span>
+            <div class="status-pill" id="api-status" data-status="unknown">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span class="status-label">🔐 Checking token…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle theme"
+        aria-pressed="false">🌙</button>
     </div>
   </header>
 
