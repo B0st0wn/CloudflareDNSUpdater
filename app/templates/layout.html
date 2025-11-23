@@ -41,6 +41,12 @@
       --shadow-card: 0 8px 28px rgba(15, 23, 42, 0.1);
       --chip-bg: rgba(37, 99, 235, 0.08);
       --muted-bg: rgba(15, 23, 42, 0.04);
+      --card-compact-width: 520px;
+      --card-compact-min-height: 120px;
+      --card-compact-height: auto;
+      --card-compact-padding: 1.25rem;
+      --card-compact-content-gap: 0.5rem;
+      --card-compact-form-gap: 0.5rem;
     }
 
     :root[data-theme='dark'] {
@@ -300,6 +306,40 @@
       max-width: none;
       width: 100%;
       margin: 0;
+    }
+
+    .card.card-compact {
+      margin: 0 auto;
+      width: min(100%, var(--card-compact-width));
+      max-width: var(--card-compact-width);
+      min-height: var(--card-compact-min-height);
+      height: var(--card-compact-height);
+      padding: var(--card-compact-padding);
+    }
+
+    .card.card-compact .stacked-form {
+      flex-direction: row;
+      align-items: center;
+      gap: var(--card-compact-form-gap);
+    }
+
+    .card.card-compact .stacked-form .form-group {
+      flex: 1 1 auto;
+      margin: 0;
+    }
+
+    .card.card-compact .stacked-form button {
+      width: auto;
+    }
+
+    .card.card-compact .card-content {
+      gap: var(--card-compact-content-gap);
+    }
+
+    .card-wrapper-centered {
+      width: 100%;
+      display: flex;
+      justify-content: center;
     }
 
     .card:hover {
@@ -633,6 +673,68 @@
       color: var(--text);
     }
 
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 5, 7, 0.75);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(1rem, 2vw, 3rem);
+      z-index: 2000;
+    }
+
+    .modal-overlay.is-visible {
+      display: flex;
+    }
+
+    .modal-dialog {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      width: min(65vw, 900px);
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      outline: none;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.25rem 1.5rem 0;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 1.3rem;
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 6px;
+    }
+
+    .modal-close:hover {
+      color: var(--primary);
+    }
+
+    .modal-body {
+      padding: 1rem 1.5rem 1.5rem;
+      overflow-y: auto;
+      flex: 1 1 auto;
+    }
+
     @keyframes spin {
       to {
         transform: rotate(360deg);
@@ -709,6 +811,10 @@
 
       .card {
         padding: 1.25rem;
+      }
+
+      .modal-dialog {
+        width: min(90vw, 520px);
       }
     }
 

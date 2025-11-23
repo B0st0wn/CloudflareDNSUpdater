@@ -4,27 +4,45 @@
 <div class="dashboard-section">
   {% if not token_present %}
   <!-- Setup Card -->
-  <div class="card full-span">
-    <h2>🔐 Configuration Setup</h2>
-    <div class="card-content">
-      <p class="info-text">Enter your Cloudflare API token to get started.</p>
-      <form hx-post="/api/config" method="post" class="stacked-form">
-        <div class="form-group">
-          <input type="password" name="token" placeholder="Paste your Cloudflare API token..." required />
-        </div>
-        <button type="submit">Save Token</button>
-      </form>
+  <div class="card-wrapper-centered">
+    <div class="card card-compact">
+      <h2>🔐 Configuration Setup</h2>
+      <div class="card-content">
+        <p class="info-text">Enter your Cloudflare API token to get started.</p>
+        <form hx-post="/api/config" method="post" class="stacked-form">
+          <div class="form-group">
+            <input type="password" name="token" placeholder="Paste your Cloudflare API token..." required />
+          </div>
+          <button type="submit">Save Token</button>
+        </form>
+      </div>
     </div>
   </div>
 
   {% else %}
   <!-- Import Records Card - Full Width -->
-  <div class="card full-span">
+  <div class="card">
     <h2>📥 Import Records</h2>
     <div class="card-content">
-      <button hx-get="/api/zones" hx-target="#zones-list" hx-swap="innerHTML" class="btn-block">Load Zones from
-        Cloudflare</button>
-      <div id="zones-list" class="zone-records"></div>
+      <button type="button" class="btn-block"
+        onclick="openZonesModal()"
+        hx-get="/api/zones"
+        hx-target="#zones-modal-body"
+        hx-swap="innerHTML">
+        Load Zones from Cloudflare
+      </button>
+    </div>
+  </div>
+
+  <div id="zones-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="zones-modal-title" tabindex="-1">
+      <div class="modal-header">
+        <h3 id="zones-modal-title">Import Cloudflare Records</h3>
+        <button type="button" class="modal-close" aria-label="Close import modal" onclick="closeZonesModal()">&times;</button>
+      </div>
+      <div id="zones-modal-body" class="modal-body">
+        <p class="info-text">Click "Load Zones from Cloudflare" to retrieve your available zones.</p>
+      </div>
     </div>
   </div>
 
@@ -81,6 +99,40 @@
 </div>
 
 <script>
+  const zonesModal = document.getElementById('zones-modal');
+  const zonesModalBody = document.getElementById('zones-modal-body');
+
+  function openZonesModal() {
+    if (!zonesModal) return;
+    zonesModal.classList.add('is-visible');
+    zonesModal.setAttribute('aria-hidden', 'false');
+    zonesModalBody?.scrollTo({ top: 0 });
+    const dialog = zonesModal.querySelector('.modal-dialog');
+    if (dialog) {
+      dialog.focus();
+    }
+  }
+
+  function closeZonesModal() {
+    if (!zonesModal) return;
+    zonesModal.classList.remove('is-visible');
+    zonesModal.setAttribute('aria-hidden', 'true');
+  }
+
+  if (zonesModal) {
+    zonesModal.addEventListener('click', function (evt) {
+      if (evt.target === zonesModal) {
+        closeZonesModal();
+      }
+    });
+  }
+
+  document.addEventListener('keydown', function (evt) {
+    if (evt.key === 'Escape' && zonesModal?.classList.contains('is-visible')) {
+      closeZonesModal();
+    }
+  });
+
   function handleSync() {
     alert('🚀 Sync initiated. Check back in a moment for results.');
   }
@@ -112,14 +164,16 @@
       });
   }
 
-  // Render zones and create record load buttons
+  // Render zones and create record load buttons in modal
   document.body.addEventListener('htmx:afterSwap', function (evt) {
-    if (evt.detail.target.id === 'zones-list') {
+    if (evt.detail.target.id === 'zones-modal-body') {
       try {
         const response = JSON.parse(evt.detail.xhr.response);
         const zones = response || [];
+        const target = document.getElementById('zones-modal-body');
+        if (!target) return;
         if (zones.length === 0) {
-          document.getElementById('zones-list').innerHTML = '<p class="info-text">No zones found.</p>';
+          target.innerHTML = '<p class="info-text">No zones found.</p>';
           return;
         }
         let html = '';
@@ -137,9 +191,10 @@
             </div>
           `;
         });
-        document.getElementById('zones-list').innerHTML = html;
+        target.innerHTML = html;
       } catch (e) {
-        document.getElementById('zones-list').innerHTML = '<p class="error-text">Error: ' + e.message + '</p>';
+        const target = document.getElementById('zones-modal-body');
+        if (target) target.innerHTML = '<p class="error-text">Error loading zones: ' + e.message + '</p>';
         console.error('Zones parse error:', e);
       }
     }
