@@ -4,7 +4,7 @@
 <div class="dashboard-section">
   {% if not token_present %}
   <!-- Setup Card -->
-  <div class="card">
+  <div class="card full-span">
     <h2>🔐 Configuration Setup</h2>
     <div class="card-content">
       <p class="info-text">Enter your Cloudflare API token to get started.</p>
@@ -19,7 +19,7 @@
 
   {% else %}
   <!-- Import Records Card - Full Width -->
-  <div class="card">
+  <div class="card full-span">
     <h2>📥 Import Records</h2>
     <div class="card-content">
       <button hx-get="/api/zones" hx-target="#zones-list" hx-swap="innerHTML" class="btn-block">Load Zones from
@@ -29,7 +29,7 @@
   </div>
 
   <!-- Records Table Card -->
-  <div class="card">
+  <div class="card full-span">
     <div class="card-header">
       <h2 style="margin: 0;">📋 Configured Records</h2>
       <button hx-post="/api/update-now" hx-swap="none" onclick="handleSync()">🚀 Sync Now</button>

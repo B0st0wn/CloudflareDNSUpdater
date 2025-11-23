@@ -73,7 +73,7 @@
       background: var(--nav-bg);
       border-bottom: 1px solid var(--border);
       padding: 1rem 0;
-      margin-bottom: 2rem;
+      margin-bottom: clamp(1rem, 2vw, 2rem);
       box-shadow: var(--shadow-soft);
       transition: background 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
     }
@@ -262,6 +262,13 @@
       width: 100%;
     }
 
+    .page-body {
+      width: 100%;
+      margin: 0;
+      max-width: none;
+      padding: clamp(0.25rem, 1.2vw, 1rem) clamp(1rem, 4vw, 3rem) clamp(2rem, 6vw, 4rem);
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -270,9 +277,17 @@
     }
 
     .dashboard-section {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
+      display: grid;
+      gap: clamp(1rem, 2vw, 1.75rem);
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+
+    .dashboard-section .card {
+      width: 100%;
+    }
+
+    .card.full-span {
+      grid-column: 1 / -1;
     }
 
     .card {
@@ -282,6 +297,9 @@
       padding: 1.5rem;
       box-shadow: var(--shadow-card);
       transition: border-color 0.2s ease, transform 0.2s ease, background 0.3s ease;
+      max-width: none;
+      width: 100%;
+      margin: 0;
     }
 
     .card:hover {
@@ -889,9 +907,9 @@
     </div>
   </header>
 
-  <div class="container">
+  <main class="page-body">
     {% block content %}{% endblock %}
-  </div>
+  </main>
 </body>
 
 </html>
