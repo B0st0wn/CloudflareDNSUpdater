@@ -1,0 +1,45 @@
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F6821F;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F38020;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1F2937;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#374151;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="128" height="128" rx="12" fill="url(#bgGrad)"/>
+  
+  <!-- Cloud icon - larger and centered -->
+  <g transform="translate(64, 64)">
+    <!-- Main cloud -->
+    <path d="M 0 -15 Q 0 -30 18 -30 Q 36 -30 36 -15 Q 50 -15 50 5 Q 50 20 36 20 L -36 20 Q -50 20 -50 5 Q -50 -5 -42 -10 Q -42 -22 -26 -22 Q -18 -22 -10 -17 Q -10 -26 0 -30" 
+          fill="url(#cloudGrad)" 
+          stroke="#E66A0E" 
+          stroke-width="3"/>
+    
+    <!-- Network nodes -->
+    <circle cx="-18" cy="0" r="6" fill="#FFF" opacity="0.95"/>
+    <circle cx="8" cy="-8" r="6" fill="#FFF" opacity="0.95"/>
+    <circle cx="26" cy="3" r="6" fill="#FFF" opacity="0.95"/>
+    
+    <!-- Connection lines -->
+    <line x1="-18" y1="0" x2="8" y2="-8" stroke="#FFF" stroke-width="3.5" opacity="0.75"/>
+    <line x1="8" y1="-8" x2="26" y2="3" stroke="#FFF" stroke-width="3.5" opacity="0.75"/>
+    <line x1="-18" y1="0" x2="26" y2="3" stroke="#FFF" stroke-width="3" opacity="0.5"/>
+  </g>
+  
+  <!-- Sync arrows - larger -->
+  <g opacity="0.9">
+    <!-- Top right arrow -->
+    <path d="M 100 30 A 15 15 0 0 1 108 48" fill="none" stroke="#60A5FA" stroke-width="4" stroke-linecap="round"/>
+    <polygon points="108,48 112,52 106,54" fill="#60A5FA"/>
+    
+    <!-- Bottom left arrow -->
+    <path d="M 28 98 A 15 15 0 0 1 20 80" fill="none" stroke="#60A5FA" stroke-width="4" stroke-linecap="round"/>
+    <polygon points="20,80 16,76 22,74" fill="#60A5FA"/>
+  </g>
+</svg>
